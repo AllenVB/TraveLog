@@ -1,0 +1,23 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Base.Theme.TraveLog" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_primary</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="android:statusBarColor" tools:targetApi="21">@color/primary_dark</item>
+    </style>
+
+    <style name="Theme.TraveLog" parent="Base.Theme.TraveLog" />
+
+    <!-- Splash Screen teması: tam ekran, mavi arka plan -->
+    <style name="Theme.TraveLog.Splash" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:colorBackground">@color/primary</item>
+        <item name="android:statusBarColor" tools:targetApi="21">@color/primary</item>
+        <item name="android:navigationBarColor" tools:targetApi="21">@color/primary</item>
+    </style>
+
+</resources>

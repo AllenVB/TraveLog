@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">TraveLog</string>
+    <string name="add_memory">Anı Ekle</string>
+    <string name="memory_detail">Anı Detayı</string>
+    <string name="select_photo">Galeriden Fotoğraf Seç</string>
+    <string name="get_weather">Hava Durumu Al</string>
+    <string name="save_memory">Anıyı Kaydet</string>
+    <string name="no_memories">Henüz anı eklenmedi</string>
+</resources>
