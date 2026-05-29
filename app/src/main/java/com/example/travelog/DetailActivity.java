@@ -129,7 +129,11 @@ public class DetailActivity extends AppCompatActivity implements PlaceAdapter.Li
                     // Yerler bölümünü görünür yap
                     binding.dividerPlaces.setVisibility(View.VISIBLE);
                     binding.tvPlacesHeader.setVisibility(View.VISIBLE);
+                    binding.tvPlacesProgress.setVisibility(View.VISIBLE);
+                    binding.progressPlacesVisited.setVisibility(View.VISIBLE);
                     binding.recyclerViewPlaces.setVisibility(View.VISIBLE);
+
+                    updateVisitedProgress();
                 }
             });
         });
@@ -153,6 +157,23 @@ public class DetailActivity extends AppCompatActivity implements PlaceAdapter.Li
                 ? "✅ " + place.name + " gezildi!"
                 : "Gezilmedi olarak işaretlendi";
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+
+        updateVisitedProgress();
+    }
+
+    /** "X/N gezildi" metnini ve ilerleme çubuğunu günceller */
+    private void updateVisitedProgress() {
+        int total = placeList.size();
+        if (total == 0) return;
+
+        int visited = 0;
+        for (Place p : placeList) {
+            if (p.isVisited) visited++;
+        }
+
+        binding.tvPlacesProgress.setText(
+                "✅ " + visited + "/" + total + " yer gezildi");
+        binding.progressPlacesVisited.setProgress((int) (visited * 100f / total));
     }
 
     @Override

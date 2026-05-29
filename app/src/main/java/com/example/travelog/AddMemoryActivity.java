@@ -38,6 +38,13 @@ public class AddMemoryActivity extends AppCompatActivity {
     // openweathermap.org — ücretsiz API key
     private static final String OWM_API_KEY = "f0ad2bd63ed07359e4d47ed692a0ba5c";
 
+    /**
+     * OpenTripMap API key (opentripmap.io — ücretsiz).
+     * Boş bırakılırsa OpenTripMap atlanır ve doğrudan Wikipedia kaynağı kullanılır,
+     * böylece özellik anahtar olmadan da çalışır.
+     */
+    private static final String OTM_API_KEY = "";
+
     private ActivityAddMemoryBinding binding;
     private String selectedImageUri = "";
     private String weatherInfo = "";
@@ -142,7 +149,7 @@ public class AddMemoryActivity extends AppCompatActivity {
                             "%.1f°C, %s, nem: %%%d", temp, desc, humidity);
                     binding.textViewWeatherInfo.setText("🌤 " + weatherInfo);
 
-                    // Koordinatlar varsa Wikipedia'dan ünlü yerleri çek
+                    // Koordinatlar varsa ünlü yerleri çek
                     if (body.coord != null) {
                         fetchTopPlaces(body.coord.lat, body.coord.lon);
                     } else {
@@ -166,16 +173,68 @@ public class AddMemoryActivity extends AppCompatActivity {
         });
     }
 
-    // ── Wikipedia Geosearch (API key gerektirmez) ─────────────────────────────
+    // ── Ünlü Yerler: OpenTripMap (öncelikli) → Wikipedia (yedek) ───────────────
+
+    /** En fazla kaç ünlü yer gösterilecek */
+    private static final int MAX_PLACES = 3;
 
     private void fetchTopPlaces(double lat, double lon) {
+        // OpenTripMap key varsa popülerliğe göre sıralı kaynağı dene; yoksa Wikipedia'ya geç
+        if (!TextUtils.isEmpty(OTM_API_KEY)) {
+            fetchFromOpenTripMap(lat, lon);
+        } else {
+            fetchFromWikipedia(lat, lon);
+        }
+    }
+
+    /** Birincil kaynak: OpenTripMap — popülerliğe (rate) göre sıralı turistik yerler */
+    private void fetchFromOpenTripMap(double lat, double lon) {
+        OpenTripMapService otm = RetrofitClient.getOpenTripMapInstance()
+                .create(OpenTripMapService.class);
+
+        // rate=3h → yalnızca yüksek puanlı/ünlü yerler; popülerliğe göre azalan sırada döner
+        otm.getPlaces(20000, lon, lat, "3h", "interesting_places", 15, "json", OTM_API_KEY)
+                .enqueue(new Callback<List<OtmPlace>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<List<OtmPlace>> call,
+                                           @NonNull Response<List<OtmPlace>> response) {
+                        fetchedPlaces.clear();
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            for (OtmPlace p : response.body()) {
+                                if (p != null && isGoodPlaceTitle(p.name)
+                                        && fetchedPlaces.size() < MAX_PLACES) {
+                                    fetchedPlaces.add(new Place(0, p.name.trim()));
+                                }
+                            }
+                        }
+
+                        // OTM boş döndüyse Wikipedia'ya düş
+                        if (fetchedPlaces.isEmpty()) {
+                            fetchFromWikipedia(lat, lon);
+                        } else {
+                            showPlacesResult();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<List<OtmPlace>> call,
+                                          @NonNull Throwable t) {
+                        // Hata → yedek kaynağa geç
+                        fetchFromWikipedia(lat, lon);
+                    }
+                });
+    }
+
+    /** Yedek kaynak: Wikipedia Geosearch — API key gerektirmez */
+    private void fetchFromWikipedia(double lat, double lon) {
         String coords = lat + "|" + lon;
 
         WikipediaService wikiService = RetrofitClient.getWikipediaInstance()
                 .create(WikipediaService.class);
 
-        // radius=10000 m, limit=10 (ilk 3 geçerli başlığı alacağız)
-        wikiService.getPlacesNearby("query", "geosearch", 10000, coords, 10, 0, "json")
+        // Daha geniş aday havuzu (limit=20) → filtreden geçenlerin ilk 3'ünü alırız
+        wikiService.getPlacesNearby("query", "geosearch", 10000, coords, 20, 0, "json")
                 .enqueue(new Callback<WikiGeoSearchResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<WikiGeoSearchResponse> call,
@@ -188,8 +247,9 @@ public class AddMemoryActivity extends AppCompatActivity {
 
                             for (WikiGeoSearchResponse.GeoPlace gp :
                                     response.body().query.geosearch) {
-                                if (!TextUtils.isEmpty(gp.title) && fetchedPlaces.size() < 3) {
-                                    fetchedPlaces.add(new Place(0, gp.title));
+                                if (isGoodPlaceTitle(gp.title)
+                                        && fetchedPlaces.size() < MAX_PLACES) {
+                                    fetchedPlaces.add(new Place(0, gp.title.trim()));
                                 }
                             }
                         }
@@ -205,16 +265,42 @@ public class AddMemoryActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Gezilebilir/ünlü bir yer başlığı mı? Tarihî olaylar, listeler, sayım/seçim
+     * kayıtları ve anlam ayrımı sayfaları gibi "yer olmayan" başlıkları eler.
+     */
+    private boolean isGoodPlaceTitle(String title) {
+        if (TextUtils.isEmpty(title)) return false;
+
+        String t = title.toLowerCase(Locale.ROOT).trim();
+
+        // Yıl/sayı ile başlayan başlıklar genelde olaydır: "740 Constantinople earthquake"
+        if (t.matches("^\\d{3,4}\\b.*")) return false;
+
+        String[] blocked = {
+                "earthquake", "deprem", "list of", "liste", "(disambiguation)",
+                "census", "election", "massacre", "battle of", "siege of",
+                "treaty of", "uprising", "revolt", "war ", "timeline"
+        };
+        for (String b : blocked) {
+            if (t.contains(b)) return false;
+        }
+        return true;
+    }
+
     // ── Yerler UI ─────────────────────────────────────────────────────────────
 
     private void showPlacesLoading() {
         binding.cardPlacesPreview.setVisibility(View.VISIBLE);
+        binding.progressPlaces.setVisibility(View.VISIBLE);
         binding.tvPlacesStatus.setVisibility(View.VISIBLE);
         binding.tvPlacesStatus.setText("Ünlü yerler aranıyor...");
         binding.layoutPlacesList.removeAllViews();
     }
 
     private void showPlacesResult() {
+        binding.progressPlaces.setVisibility(View.GONE);
+
         if (fetchedPlaces.isEmpty()) {
             binding.tvPlacesStatus.setVisibility(View.VISIBLE);
             binding.tvPlacesStatus.setText("Bu şehir için yer bilgisi bulunamadı");
@@ -250,6 +336,7 @@ public class AddMemoryActivity extends AppCompatActivity {
 
     private void showPlacesError(String msg) {
         binding.cardPlacesPreview.setVisibility(View.VISIBLE);
+        binding.progressPlaces.setVisibility(View.GONE);
         binding.tvPlacesStatus.setVisibility(View.VISIBLE);
         binding.tvPlacesStatus.setText(msg);
         binding.layoutPlacesList.removeAllViews();

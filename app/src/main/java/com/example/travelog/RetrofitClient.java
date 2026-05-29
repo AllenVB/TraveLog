@@ -1,9 +1,26 @@
 package com.example.travelog;
 
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
+
+    /**
+     * Wikipedia ve OpenTripMap, kimliksiz (User-Agent'sız) istekleri engelliyor.
+     * Bu interceptor her isteğe açıklayıcı bir User-Agent ekler.
+     */
+    private static final String USER_AGENT =
+            "TraveLog/1.0 (Android; https://github.com/AllenVB/TraveLog)";
+
+    private static OkHttpClient buildClient() {
+        return new OkHttpClient.Builder()
+                .addInterceptor(chain -> chain.proceed(
+                        chain.request().newBuilder()
+                                .header("User-Agent", USER_AGENT)
+                                .build()))
+                .build();
+    }
 
     // ── OpenWeatherMap ────────────────────────────────────────────────────────
     private static Retrofit weatherRetrofit;
@@ -19,7 +36,22 @@ public class RetrofitClient {
         return weatherRetrofit;
     }
 
-    // ── Wikipedia Geosearch (API key gerekmez) ────────────────────────────────
+    // ── OpenTripMap (turizm odaklı — popülerliğe göre sıralı) ──────────────────
+    private static Retrofit openTripMapRetrofit;
+    private static final String OTM_BASE_URL = "https://api.opentripmap.com/";
+
+    public static Retrofit getOpenTripMapInstance() {
+        if (openTripMapRetrofit == null) {
+            openTripMapRetrofit = new Retrofit.Builder()
+                    .baseUrl(OTM_BASE_URL)
+                    .client(buildClient())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+        }
+        return openTripMapRetrofit;
+    }
+
+    // ── Wikipedia Geosearch (yedek kaynak — API key gerekmez) ──────────────────
     private static Retrofit wikipediaRetrofit;
     private static final String WIKI_BASE_URL = "https://en.wikipedia.org/";
 
@@ -27,6 +59,7 @@ public class RetrofitClient {
         if (wikipediaRetrofit == null) {
             wikipediaRetrofit = new Retrofit.Builder()
                     .baseUrl(WIKI_BASE_URL)
+                    .client(buildClient())
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }

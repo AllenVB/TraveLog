@@ -165,19 +165,35 @@
                         android:textStyle="bold"
                         android:layout_marginBottom="8dp" />
 
-                    <!-- Yükleniyor / hata mesajı -->
-                    <TextView
-                        android:id="@+id/tvPlacesStatus"
+                    <!-- Yükleniyor satırı: dönen çark + mesaj -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ProgressBar
+                            android:id="@+id/progressPlaces"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="10dp"
+                            android:visibility="gone" />
+
+                        <!-- Yükleniyor / hata mesajı -->
+                        <TextView
+                            android:id="@+id/tvPlacesStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
 
                     <!-- Yer isimleri buraya programatik eklenir -->
                     <LinearLayout
                         android:id="@+id/layoutPlacesList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
                         android:orientation="vertical" />
 
                 </LinearLayout>

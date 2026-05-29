@@ -136,6 +136,26 @@
                     android:textStyle="bold"
                     android:visibility="gone" />
 
+                <!-- Gezilme ilerleme göstergesi -->
+                <TextView
+                    android:id="@+id/tvPlacesProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <ProgressBar
+                    android:id="@+id/progressPlacesVisited"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:max="100"
+                    android:progressTint="@color/primary"
+                    android:visibility="gone" />
+
                 <!-- Yerler listesi — iç içe scroll kapalı -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerViewPlaces"

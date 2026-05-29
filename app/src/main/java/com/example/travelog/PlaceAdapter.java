@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -69,7 +70,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder> 
                 listener.onVisitedToggled(pos, checked);
                 holder.btnCamera.setVisibility(checked ? View.VISIBLE : View.GONE);
                 if (!checked) {
-                    holder.ivPhoto.setVisibility(View.GONE);
+                    holder.cardPhoto.setVisibility(View.GONE);
                 }
             }
         });
@@ -85,7 +86,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder> 
 
         // Fotoğraf thumbnail
         if (!TextUtils.isEmpty(place.photoUri)) {
-            holder.ivPhoto.setVisibility(View.VISIBLE);
+            holder.cardPhoto.setVisibility(View.VISIBLE);
             Glide.with(holder.ivPhoto.getContext())
                     .load(Uri.parse(place.photoUri))
                     .centerCrop()
@@ -93,7 +94,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder> 
                     .placeholder(R.color.image_placeholder)
                     .into(holder.ivPhoto);
         } else {
-            holder.ivPhoto.setVisibility(View.GONE);
+            holder.cardPhoto.setVisibility(View.GONE);
         }
     }
 
@@ -107,6 +108,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder> 
         final CheckBox checkbox;
         final ImageButton btnCamera;
         final ImageView ivPhoto;
+        final CardView cardPhoto;
 
         ViewHolder(@NonNull View v) {
             super(v);
@@ -115,6 +117,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder> 
             checkbox  = v.findViewById(R.id.checkboxVisited);
             btnCamera = v.findViewById(R.id.btnAddPhoto);
             ivPhoto   = v.findViewById(R.id.ivPlacePhoto);
+            cardPhoto = v.findViewById(R.id.cardPlacePhoto);
         }
     }
 }
