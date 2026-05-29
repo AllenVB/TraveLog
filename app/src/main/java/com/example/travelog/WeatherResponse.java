@@ -15,6 +15,17 @@ public class WeatherResponse {
     @SerializedName("name")
     public String cityName;
 
+    @SerializedName("coord")
+    public Coord coord;
+
+    public static class Coord {
+        @SerializedName("lat")
+        public double lat;
+
+        @SerializedName("lon")
+        public double lon;
+    }
+
     public static class Main {
         @SerializedName("temp")
         public float temp;

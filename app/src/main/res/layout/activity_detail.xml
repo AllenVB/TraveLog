@@ -21,7 +21,8 @@
             app:titleTextColor="@color/on_primary" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <ScrollView
+    <!-- NestedScrollView: RecyclerView ile iç içe scroll için -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -31,6 +32,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Anı Fotoğrafı -->
             <ImageView
                 android:id="@+id/imageViewDetail"
                 android:layout_width="match_parent"
@@ -45,6 +47,7 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
+                <!-- Başlık -->
                 <TextView
                     android:id="@+id/textViewTitleDetail"
                     android:layout_width="match_parent"
@@ -53,6 +56,7 @@
                     android:textSize="26sp"
                     android:textStyle="bold" />
 
+                <!-- Şehir + Tarih -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -76,6 +80,7 @@
                         android:textSize="13sp" />
                 </LinearLayout>
 
+                <!-- Hava Durumu Kartı -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -93,6 +98,7 @@
                         android:textSize="15sp" />
                 </androidx.cardview.widget.CardView>
 
+                <!-- Ayırıcı -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -100,6 +106,7 @@
                     android:layout_marginBottom="18dp"
                     android:background="@color/divider" />
 
+                <!-- Açıklama -->
                 <TextView
                     android:id="@+id/textViewDescriptionDetail"
                     android:layout_width="match_parent"
@@ -107,7 +114,38 @@
                     android:lineSpacingExtra="6dp"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
+
+                <!-- ─── Keşfedilecek Yerler ─────────────────────────────── -->
+                <View
+                    android:id="@+id/dividerPlaces"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/divider"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tvPlacesHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="🗺  Keşfedilecek Yerler"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <!-- Yerler listesi — iç içe scroll kapalı -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewPlaces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone" />
+
             </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

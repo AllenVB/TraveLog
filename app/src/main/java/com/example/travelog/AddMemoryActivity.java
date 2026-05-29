@@ -6,6 +6,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -19,7 +22,9 @@ import com.bumptech.glide.Glide;
 import com.example.travelog.databinding.ActivityAddMemoryBinding;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,13 +35,17 @@ import retrofit2.Response;
 
 public class AddMemoryActivity extends AppCompatActivity {
 
-    // openweathermap.org adresinden ücretsiz API key alın
-    private static final String API_KEY = "f0ad2bd63ed07359e4d47ed692a0ba5c";
+    // openweathermap.org — ücretsiz API key
+    private static final String OWM_API_KEY = "f0ad2bd63ed07359e4d47ed692a0ba5c";
 
     private ActivityAddMemoryBinding binding;
     private String selectedImageUri = "";
     private String weatherInfo = "";
 
+    /** Hava durumu yanıtından gelen koordinatlarla çekilen ünlü yerler */
+    private final List<Place> fetchedPlaces = new ArrayList<>();
+
+    // ── Galeri Launcher (Anı Fotoğrafı) ──────────────────────────────────────
     private final ActivityResultLauncher<Intent> galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -68,7 +77,7 @@ public class AddMemoryActivity extends AppCompatActivity {
         binding.btnGetWeather.setOnClickListener(v -> {
             String city = binding.editTextCity.getText().toString().trim();
             if (!city.isEmpty()) {
-                fetchWeather(city);
+                fetchWeatherAndPlaces(city);
             } else {
                 Toast.makeText(this, "Lütfen önce şehir girin", Toast.LENGTH_SHORT).show();
             }
@@ -76,6 +85,8 @@ public class AddMemoryActivity extends AppCompatActivity {
 
         binding.btnSave.setOnClickListener(v -> saveMemory());
     }
+
+    // ── Galeri İzin ───────────────────────────────────────────────────────────
 
     private void checkPermissionAndOpenGallery() {
         String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -110,23 +121,36 @@ public class AddMemoryActivity extends AppCompatActivity {
         }
     }
 
-    private void fetchWeather(String city) {
+    // ── Hava Durumu + Koordinat Çekimi ────────────────────────────────────────
+
+    private void fetchWeatherAndPlaces(String city) {
         binding.textViewWeatherInfo.setText("🌤 Yükleniyor...");
+        showPlacesLoading();
 
         WeatherService service = RetrofitClient.getRetrofitInstance().create(WeatherService.class);
-        service.getCurrentWeather(city, API_KEY, "metric").enqueue(new Callback<WeatherResponse>() {
+        service.getCurrentWeather(city, OWM_API_KEY, "metric").enqueue(new Callback<WeatherResponse>() {
             @Override
             public void onResponse(@NonNull Call<WeatherResponse> call,
                                    @NonNull Response<WeatherResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    float temp = response.body().main.temp;
-                    String desc = response.body().weather.get(0).description;
-                    int humidity = response.body().main.humidity;
-                    weatherInfo = String.format(Locale.getDefault(),
+                    WeatherResponse body = response.body();
+
+                    float temp    = body.main.temp;
+                    String desc   = body.weather.get(0).description;
+                    int humidity  = body.main.humidity;
+                    weatherInfo   = String.format(Locale.getDefault(),
                             "%.1f°C, %s, nem: %%%d", temp, desc, humidity);
                     binding.textViewWeatherInfo.setText("🌤 " + weatherInfo);
+
+                    // Koordinatlar varsa Wikipedia'dan ünlü yerleri çek
+                    if (body.coord != null) {
+                        fetchTopPlaces(body.coord.lat, body.coord.lon);
+                    } else {
+                        showPlacesError("Yer bilgisi alınamadı");
+                    }
                 } else {
                     binding.textViewWeatherInfo.setText("Şehir bulunamadı");
+                    showPlacesError("Şehir bulunamadı");
                     Toast.makeText(AddMemoryActivity.this,
                             "Şehir adını kontrol edin", Toast.LENGTH_SHORT).show();
                 }
@@ -135,17 +159,109 @@ public class AddMemoryActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call<WeatherResponse> call, @NonNull Throwable t) {
                 binding.textViewWeatherInfo.setText("Bağlantı hatası");
+                showPlacesError("Bağlantı hatası");
                 Toast.makeText(AddMemoryActivity.this,
                         "İnternet bağlantısını kontrol edin", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
+    // ── Wikipedia Geosearch (API key gerektirmez) ─────────────────────────────
+
+    private void fetchTopPlaces(double lat, double lon) {
+        String coords = lat + "|" + lon;
+
+        WikipediaService wikiService = RetrofitClient.getWikipediaInstance()
+                .create(WikipediaService.class);
+
+        // radius=10000 m, limit=10 (ilk 3 geçerli başlığı alacağız)
+        wikiService.getPlacesNearby("query", "geosearch", 10000, coords, 10, 0, "json")
+                .enqueue(new Callback<WikiGeoSearchResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<WikiGeoSearchResponse> call,
+                                           @NonNull Response<WikiGeoSearchResponse> response) {
+                        fetchedPlaces.clear();
+
+                        if (response.isSuccessful() && response.body() != null
+                                && response.body().query != null
+                                && response.body().query.geosearch != null) {
+
+                            for (WikiGeoSearchResponse.GeoPlace gp :
+                                    response.body().query.geosearch) {
+                                if (!TextUtils.isEmpty(gp.title) && fetchedPlaces.size() < 3) {
+                                    fetchedPlaces.add(new Place(0, gp.title));
+                                }
+                            }
+                        }
+
+                        showPlacesResult();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<WikiGeoSearchResponse> call,
+                                          @NonNull Throwable t) {
+                        showPlacesError("Yer bilgisi yüklenemedi");
+                    }
+                });
+    }
+
+    // ── Yerler UI ─────────────────────────────────────────────────────────────
+
+    private void showPlacesLoading() {
+        binding.cardPlacesPreview.setVisibility(View.VISIBLE);
+        binding.tvPlacesStatus.setVisibility(View.VISIBLE);
+        binding.tvPlacesStatus.setText("Ünlü yerler aranıyor...");
+        binding.layoutPlacesList.removeAllViews();
+    }
+
+    private void showPlacesResult() {
+        if (fetchedPlaces.isEmpty()) {
+            binding.tvPlacesStatus.setVisibility(View.VISIBLE);
+            binding.tvPlacesStatus.setText("Bu şehir için yer bilgisi bulunamadı");
+            binding.layoutPlacesList.removeAllViews();
+            return;
+        }
+
+        binding.tvPlacesStatus.setVisibility(View.GONE);
+        binding.layoutPlacesList.removeAllViews();
+
+        int i = 1;
+        for (Place place : fetchedPlaces) {
+            TextView tv = new TextView(this);
+            tv.setText(i + ".  📍 " + place.name);
+            tv.setTextSize(14f);
+            tv.setTextColor(getColor(R.color.text_primary));
+            tv.setPadding(0, 10, 0, 10);
+            binding.layoutPlacesList.addView(tv);
+
+            // İnce ayırıcı
+            if (i < fetchedPlaces.size()) {
+                View divider = new View(this);
+                divider.setBackgroundColor(getColor(R.color.divider));
+                android.widget.LinearLayout.LayoutParams lp =
+                        new android.widget.LinearLayout.LayoutParams(
+                                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                divider.setLayoutParams(lp);
+                binding.layoutPlacesList.addView(divider);
+            }
+            i++;
+        }
+    }
+
+    private void showPlacesError(String msg) {
+        binding.cardPlacesPreview.setVisibility(View.VISIBLE);
+        binding.tvPlacesStatus.setVisibility(View.VISIBLE);
+        binding.tvPlacesStatus.setText(msg);
+        binding.layoutPlacesList.removeAllViews();
+    }
+
+    // ── Kaydetme ──────────────────────────────────────────────────────────────
+
     private void saveMemory() {
-        String title = binding.editTextTitle.getText().toString().trim();
+        String title       = binding.editTextTitle.getText().toString().trim();
         String description = binding.editTextDescription.getText().toString().trim();
-        String city = binding.editTextCity.getText().toString().trim();
-        String date = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(new Date());
+        String city        = binding.editTextCity.getText().toString().trim();
+        String date        = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(new Date());
 
         if (title.isEmpty()) {
             binding.editTextTitle.setError("Başlık gerekli");
@@ -168,7 +284,16 @@ public class AddMemoryActivity extends AppCompatActivity {
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            AppDatabase.getInstance(this).memoryDao().insert(memory);
+            // insert() artık long döndürüyor → place'lere memoryId atamak için kullanıyoruz
+            long memoryId = AppDatabase.getInstance(this).memoryDao().insert(memory);
+
+            if (!fetchedPlaces.isEmpty()) {
+                for (Place place : fetchedPlaces) {
+                    place.memoryId = (int) memoryId;
+                }
+                AppDatabase.getInstance(this).placeDao().insertAll(fetchedPlaces);
+            }
+
             runOnUiThread(() -> {
                 Toast.makeText(this, "Anı kaydedildi! ✈", Toast.LENGTH_SHORT).show();
                 finish();

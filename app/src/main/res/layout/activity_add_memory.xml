@@ -139,6 +139,50 @@
                     android:textSize="14sp" />
             </androidx.cardview.widget.CardView>
 
+            <!-- Keşfedilecek Yerler Önizleme Kartı (başlangıçta gizli) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardPlacesPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🗺  Keşfedilecek Yerler"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Yükleniyor / hata mesajı -->
+                    <TextView
+                        android:id="@+id/tvPlacesStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- Yer isimleri buraya programatik eklenir -->
+                    <LinearLayout
+                        android:id="@+id/layoutPlacesList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <!-- Kaydet Butonu -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"

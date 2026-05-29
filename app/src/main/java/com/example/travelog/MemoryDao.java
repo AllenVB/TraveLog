@@ -12,7 +12,7 @@ import java.util.List;
 public interface MemoryDao {
 
     @Insert
-    void insert(Memory memory);
+    long insert(Memory memory);
 
     @Update
     void update(Memory memory);

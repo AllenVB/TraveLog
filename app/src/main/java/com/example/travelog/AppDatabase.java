@@ -9,19 +9,35 @@ import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {Memory.class}, version = 2, exportSchema = false)
+@Database(entities = {Memory.class, Place.class}, version = 3, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase instance;
 
     public abstract MemoryDao memoryDao();
+    public abstract PlaceDao placeDao();
 
-    // isFavorite kolonu eklendi (versiyon 1 → 2)
+    // ── Versiyon 1 → 2 : isFavorite kolonu ──────────────────────────────────
     static final Migration MIGRATION_1_2 = new Migration(1, 2) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
             database.execSQL(
                 "ALTER TABLE memories ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0"
+            );
+        }
+    };
+
+    // ── Versiyon 2 → 3 : places tablosu ─────────────────────────────────────
+    static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `places` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`memoryId` INTEGER NOT NULL, " +
+                "`name` TEXT, " +
+                "`isVisited` INTEGER NOT NULL DEFAULT 0, " +
+                "`photoUri` TEXT)"
             );
         }
     };
@@ -32,7 +48,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             context.getApplicationContext(),
                             AppDatabase.class,
                             "travel_log_database")
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .fallbackToDestructiveMigration()
                     .build();
         }

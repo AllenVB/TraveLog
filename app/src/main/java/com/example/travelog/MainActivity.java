@@ -190,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("\"" + memory.title + "\" kalıcı olarak silinsin mi?")
                 .setPositiveButton("Sil", (d, w) -> {
                     Executors.newSingleThreadExecutor().execute(() -> {
+                        db.placeDao().deleteByMemoryId(memory.id); // ilişkili yerleri sil
                         db.memoryDao().delete(memory);
                         runOnUiThread(this::loadMemories);
                     });
