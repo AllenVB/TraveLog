@@ -328,7 +328,7 @@
         android:background="@color/surface"
         app:elevation="8dp"
         app:menu="@menu/bottom_nav_menu"
-        app:selectedItemColor="@color/primary"
-        app:unselectedItemColor="@color/text_secondary" />
+        app:itemIconTint="@color/bottom_nav_colors"
+        app:itemTextColor="@color/bottom_nav_colors" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
