@@ -281,16 +281,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void applyDisplayList() {
-        List<Memory> sorted = new ArrayList<>(allMemories);
-        switch (currentSortMode) {
-            case SORT_OLDEST:    Collections.reverse(sorted); break;
-            case SORT_CITY_AZ:   Collections.sort(sorted, (a, b) -> a.city.compareToIgnoreCase(b.city)); break;
-            case SORT_FAV_FIRST: Collections.sort(sorted, (a, b) -> Boolean.compare(b.isFavorite, a.isFavorite)); break;
-            default: break;
+        try {
+            List<Memory> sorted = new ArrayList<>(allMemories);
+            switch (currentSortMode) {
+                case SORT_OLDEST:
+                    Collections.reverse(sorted);
+                    break;
+                case SORT_CITY_AZ:
+                    Collections.sort(sorted, (a, b) -> {
+                        String ca = a.city != null ? a.city : "";
+                        String cb = b.city != null ? b.city : "";
+                        return ca.compareToIgnoreCase(cb);
+                    });
+                    break;
+                case SORT_FAV_FIRST:
+                    Collections.sort(sorted, (a, b) -> Boolean.compare(b.isFavorite, a.isFavorite));
+                    break;
+                default:
+                    break;
+            }
+            adapter.updateList(sorted);
+            String q = binding.editTextSearch.getText() != null
+                    ? binding.editTextSearch.getText().toString() : "";
+            if (!q.isEmpty()) adapter.filter(q);
+        } catch (Exception e) {
+            // Defensive: reload whole list without diff on unexpected error
+            adapter.notifyDataSetChanged();
         }
-        adapter.updateList(sorted);
-        String q = binding.editTextSearch.getText().toString();
-        if (!q.isEmpty()) adapter.filter(q);
         updateEmptyState();
     }
 

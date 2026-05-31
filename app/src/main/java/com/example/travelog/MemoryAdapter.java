@@ -46,9 +46,9 @@ public class MemoryAdapter extends RecyclerView.Adapter<MemoryAdapter.MemoryView
     public void onBindViewHolder(@NonNull MemoryViewHolder holder, int position) {
         Memory memory = filteredList.get(position);
 
-        holder.textViewTitle.setText(memory.title);
-        holder.textViewCity.setText(memory.city != null ? memory.city.toUpperCase() : "");
-        holder.textViewDate.setText("📅 " + memory.date);
+        holder.textViewTitle.setText(memory.title != null ? memory.title : "");
+        holder.textViewCity.setText(memory.city   != null ? memory.city.toUpperCase() : "");
+        holder.textViewDate.setText(memory.date   != null ? "📅 " + memory.date : "");
         holder.textViewWeather.setText(
                 TextUtils.isEmpty(memory.weather) ? "" : "🌤 " + memory.weather);
 
@@ -101,8 +101,9 @@ public class MemoryAdapter extends RecyclerView.Adapter<MemoryAdapter.MemoryView
         } else {
             String lowerQuery = query.toLowerCase().trim();
             for (Memory m : fullList) {
-                if (m.title.toLowerCase().contains(lowerQuery)
-                        || m.city.toLowerCase().contains(lowerQuery)) {
+                boolean titleMatch = m.title != null && m.title.toLowerCase().contains(lowerQuery);
+                boolean cityMatch  = m.city  != null && m.city.toLowerCase().contains(lowerQuery);
+                if (titleMatch || cityMatch) {
                     newFiltered.add(m);
                 }
             }
