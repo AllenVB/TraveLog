@@ -51,6 +51,21 @@ public class RetrofitClient {
         return openTripMapRetrofit;
     }
 
+    // ── OpenStreetMap Overpass (turistik/tarihi POI — API key gerekmez) ────────
+    private static Retrofit overpassRetrofit;
+    private static final String OVERPASS_BASE_URL = "https://overpass-api.de/";
+
+    public static Retrofit getOverpassInstance() {
+        if (overpassRetrofit == null) {
+            overpassRetrofit = new Retrofit.Builder()
+                    .baseUrl(OVERPASS_BASE_URL)
+                    .client(buildClient())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+        }
+        return overpassRetrofit;
+    }
+
     // ── Wikipedia Geosearch (yedek kaynak — API key gerekmez) ──────────────────
     private static Retrofit wikipediaRetrofit;
     private static final String WIKI_BASE_URL = "https://en.wikipedia.org/";

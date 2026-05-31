@@ -193,11 +193,73 @@ public class AddMemoryActivity extends AppCompatActivity {
         });
     }
 
-    // ── OpenTripMap (öncelikli) → Wikipedia (yedek) ───────────────────────────
+    // ── OpenStreetMap Overpass (öncelikli) → Wikipedia (yedek) ────────────────
 
     private void fetchTopPlaces(double lat, double lon) {
-        if (!TextUtils.isEmpty(OTM_API_KEY)) fetchFromOpenTripMap(lat, lon);
-        else fetchFromWikipedia(lat, lon);
+        fetchFromOverpass(lat, lon);
+    }
+
+    /**
+     * Gerçek turistik/tarihi yerleri OSM etiketlerinden çeker.
+     * Wikipedia/Wikidata kaydı olan (daha ünlü) yerler öne alınır.
+     */
+    private void fetchFromOverpass(double lat, double lon) {
+        String q = String.format(Locale.US,
+                "[out:json][timeout:25];(" +
+                "node[\"tourism\"=\"attraction\"](around:25000,%1$f,%2$f);" +
+                "way[\"tourism\"=\"attraction\"](around:25000,%1$f,%2$f);" +
+                "node[\"historic\"~\"monument|memorial|castle|archaeological_site|ruins|fort|palace|tomb\"](around:25000,%1$f,%2$f);" +
+                "way[\"historic\"~\"monument|memorial|castle|archaeological_site|ruins|fort|palace|tomb\"](around:25000,%1$f,%2$f);" +
+                "node[\"tourism\"=\"museum\"](around:25000,%1$f,%2$f);" +
+                "way[\"tourism\"=\"museum\"](around:25000,%1$f,%2$f);" +
+                ");out center 120;",
+                lat, lon);
+
+        OverpassService overpass = RetrofitClient.getOverpassInstance().create(OverpassService.class);
+        overpass.query(q).enqueue(new Callback<OverpassResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<OverpassResponse> call,
+                                   @NonNull Response<OverpassResponse> response) {
+                fetchedPlaces.clear();
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().elements != null) {
+
+                    List<OverpassResponse.Element> els = response.body().elements;
+                    // Ünlü (wiki kaydı olan) yerler önce, sonra kategori önceliği
+                    els.sort((a, b) -> rank(b) - rank(a));
+
+                    java.util.Set<String> seen = new java.util.HashSet<>();
+                    for (OverpassResponse.Element e : els) {
+                        if (e.tags == null) continue;
+                        String name = e.tags.nameTr != null ? e.tags.nameTr
+                                : (e.tags.name != null ? e.tags.name : e.tags.nameEn);
+                        if (!isGoodPlaceTitle(name)) continue;
+                        name = name.trim();
+                        String key = name.toLowerCase(Locale.ROOT);
+                        if (!seen.add(key)) continue;
+                        fetchedPlaces.add(new Place(0, name));
+                        if (fetchedPlaces.size() >= MAX_PLACES) break;
+                    }
+                }
+                if (fetchedPlaces.isEmpty()) fetchFromWikipedia(lat, lon);
+                else showPlacesResult();
+            }
+            @Override
+            public void onFailure(@NonNull Call<OverpassResponse> call, @NonNull Throwable t) {
+                fetchFromWikipedia(lat, lon);
+            }
+        });
+    }
+
+    /** Yer puanı: wiki kaydı + kategori önemi (yüksek = daha öne). */
+    private int rank(OverpassResponse.Element e) {
+        if (e.tags == null) return 0;
+        int score = 0;
+        if (e.tags.wikidata != null || e.tags.wikipedia != null) score += 100;
+        if ("attraction".equals(e.tags.tourism)) score += 30;
+        if (e.tags.historic != null) score += 20;
+        if ("museum".equals(e.tags.tourism)) score += 10;
+        return score;
     }
 
     private void fetchFromOpenTripMap(double lat, double lon) {
