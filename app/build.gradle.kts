@@ -55,8 +55,8 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
-    // Google Maps
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    // OpenStreetMap (osmdroid) — no API key needed
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 
     // ViewPager2 (onboarding)
     implementation("androidx.viewpager2:viewpager2:1.1.0")

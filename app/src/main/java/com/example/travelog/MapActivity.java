@@ -1,44 +1,59 @@
 package com.example.travelog;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.example.travelog.databinding.ActivityMapBinding;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
+
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.BoundingBox;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.Polyline;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapActivity extends AppCompatActivity {
 
     private ActivityMapBinding binding;
-    private GoogleMap googleMap;
+    private MapView mapView;
     private final Map<Marker, Memory> markerMemoryMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // osmdroid configuration — must happen before MapView is used
+        Configuration.getInstance().setUserAgentValue(getPackageName());
+
         binding = ActivityMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // Set up the osmdroid MapView
+        mapView = binding.mapView;
+        mapView.setTileSource(TileSourceFactory.MAPNIK); // OpenStreetMap tiles
+        mapView.setMultiTouchControls(true);
+        mapView.getController().setZoom(5.0);
+        // Default center: Turkey
+        mapView.getController().setCenter(new GeoPoint(39.0, 35.0));
 
         // Floating back button
         binding.btnBack.setOnClickListener(v -> finish());
@@ -58,86 +73,66 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             return true; // nav_map — already here
         });
 
-        SupportMapFragment mapFragment = (SupportMapFragment)
-                getSupportFragmentManager().findFragmentById(R.id.mapFragment);
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(this);
-        }
-    }
-
-    @Override
-    public void onMapReady(@androidx.annotation.NonNull GoogleMap map) {
-        googleMap = map;
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
-        googleMap.getUiSettings().setMapToolbarEnabled(true);
-
-        // Offset map UI (zoom controls) above the bottom navigation bar
-        int bottomPad = (int) (64 * getResources().getDisplayMetrics().density);
-        googleMap.setPadding(0, 0, 0, bottomPad);
-
-        // Open memory detail on info window tap
-        googleMap.setOnInfoWindowClickListener(marker -> {
-            Memory memory = markerMemoryMap.get(marker);
-            if (memory != null) {
-                Intent intent = new Intent(MapActivity.this, DetailActivity.class);
-                intent.putExtra("memory", memory);
-                startActivity(intent);
-            }
-        });
-
         loadMarkersAsync();
     }
 
+    // osmdroid requires lifecycle forwarding
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    // ── Load memories and draw markers + route ─────────────────────────────
+
     private void loadMarkersAsync() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            // Sorted by date — important for route drawing
+            // Sorted ASC (old → new) for route drawing
             List<Memory> memories = AppDatabase.getInstance(this).memoryDao().getAllMemories();
-            // DB returns DESC order → reverse to ASC (old→new) for route
-            java.util.Collections.reverse(memories);
+            Collections.reverse(memories);
 
             Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
-            List<LatLng> routePoints = new ArrayList<>();
+
+            List<GeoPoint> routePoints = new ArrayList<>();
+            List<Object[]> pendingMarkers = new ArrayList<>(); // {GeoPoint, Memory}
+
+            double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
             boolean hasMarker = false;
 
             for (Memory memory : memories) {
                 try {
                     List<Address> addresses = geocoder.getFromLocationName(memory.city, 1);
                     if (addresses != null && !addresses.isEmpty()) {
-                        LatLng position = new LatLng(
-                                addresses.get(0).getLatitude(),
-                                addresses.get(0).getLongitude());
+                        double lat = addresses.get(0).getLatitude();
+                        double lng = addresses.get(0).getLongitude();
+                        GeoPoint position = new GeoPoint(lat, lng);
 
                         routePoints.add(position);
-                        boundsBuilder.include(position);
+                        pendingMarkers.add(new Object[]{position, memory});
+
+                        if (lat < minLat) minLat = lat;
+                        if (lat > maxLat) maxLat = lat;
+                        if (lng < minLng) minLng = lng;
+                        if (lng > maxLng) maxLng = lng;
+
                         hasMarker = true;
-
-                        final boolean isFav      = memory.isFavorite;
-                        final boolean isPlan     = memory.isFuturePlan;
-                        final LatLng finalPos    = position;
-                        final Memory finalMemory = memory;
-
-                        runOnUiThread(() -> {
-                            float hue = isPlan
-                                    ? BitmapDescriptorFactory.HUE_YELLOW
-                                    : (isFav ? BitmapDescriptorFactory.HUE_RED
-                                             : BitmapDescriptorFactory.HUE_AZURE);
-                            MarkerOptions opts = new MarkerOptions()
-                                    .position(finalPos)
-                                    .title(finalMemory.title)
-                                    .snippet("📍 " + finalMemory.city + "  📅 " + finalMemory.date)
-                                    .icon(BitmapDescriptorFactory.defaultMarker(hue));
-                            Marker marker = googleMap.addMarker(opts);
-                            if (marker != null) markerMemoryMap.put(marker, finalMemory);
-                        });
                     }
-                } catch (IOException e) {
-                    // Geocoding failed — skip
+                } catch (IOException ignored) {
+                    // Geocoding failed for this city — skip
                 }
             }
 
             final boolean hasMrk = hasMarker;
-            final List<LatLng> route = new ArrayList<>(routePoints);
+            final List<GeoPoint> route = new ArrayList<>(routePoints);
+            final List<Object[]> markers = new ArrayList<>(pendingMarkers);
+            final double fMinLat = minLat, fMaxLat = maxLat;
+            final double fMinLng = minLng, fMaxLng = maxLng;
 
             runOnUiThread(() -> {
                 if (!hasMrk) {
@@ -145,20 +140,77 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                // Draw route polyline
+
+                // Draw polyline first (so it appears below markers)
                 if (route.size() > 1) {
-                    googleMap.addPolyline(new PolylineOptions()
-                            .addAll(route)
-                            .color(0x800050CB) // semi-transparent blue (Nomad primary)
-                            .width(6f));
+                    Polyline polyline = new Polyline();
+                    polyline.setPoints(route);
+                    polyline.getOutlinePaint().setColor(Color.argb(140, 0, 80, 203)); // #0050CB 55% opacity
+                    polyline.getOutlinePaint().setStrokeWidth(10f);
+                    mapView.getOverlays().add(0, polyline);
                 }
-                LatLngBounds bounds = boundsBuilder.build();
-                try {
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150));
-                } catch (Exception ignored) {
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(bounds.getCenter(), 4f));
+
+                // Add markers on top
+                for (Object[] entry : markers) {
+                    addMarker((GeoPoint) entry[0], (Memory) entry[1]);
                 }
+
+                // Zoom/pan to fit all markers
+                if (route.size() == 1) {
+                    mapView.getController().setZoom(10.0);
+                    mapView.getController().setCenter(route.get(0));
+                } else {
+                    // Add 10% padding around the bounding box
+                    double latPad = Math.max((fMaxLat - fMinLat) * 0.15, 0.5);
+                    double lngPad = Math.max((fMaxLng - fMinLng) * 0.15, 0.5);
+                    BoundingBox box = new BoundingBox(
+                            fMaxLat + latPad, fMaxLng + lngPad,
+                            fMinLat - latPad, fMinLng - lngPad);
+                    mapView.zoomToBoundingBox(box, true, 100);
+                }
+
+                mapView.invalidate();
             });
         });
+    }
+
+    /** Create and place a single osmdroid Marker for the given Memory. */
+    private void addMarker(GeoPoint position, Memory memory) {
+        Marker marker = new Marker(mapView);
+        marker.setPosition(position);
+        marker.setTitle(memory.title);
+        marker.setSnippet("📍 " + memory.city + "  📅 " + memory.date);
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+
+        // Tint the map pin based on memory type
+        int tintColor;
+        if (memory.isFuturePlan)    tintColor = 0xFFFF8F00; // amber  — plan
+        else if (memory.isFavorite) tintColor = 0xFFF44336; // red    — favourite
+        else                        tintColor = 0xFF0050CB; // blue   — normal
+
+        Drawable icon = AppCompatResources.getDrawable(this, R.drawable.ic_map);
+        if (icon != null) {
+            icon = DrawableCompat.wrap(icon.mutate());
+            DrawableCompat.setTint(icon, tintColor);
+        }
+        marker.setIcon(icon);
+
+        // Tap once → show info bubble; tap again (or tap bubble) → open detail
+        marker.setOnMarkerClickListener((m, mapV) -> {
+            if (m.isInfoWindowShown()) {
+                Memory mem = markerMemoryMap.get(m);
+                if (mem != null) {
+                    Intent intent = new Intent(MapActivity.this, DetailActivity.class);
+                    intent.putExtra("memory", mem);
+                    startActivity(intent);
+                }
+            } else {
+                m.showInfoWindow();
+            }
+            return true;
+        });
+
+        markerMemoryMap.put(marker, memory);
+        mapView.getOverlays().add(marker);
     }
 }
