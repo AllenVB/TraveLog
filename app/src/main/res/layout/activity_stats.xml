@@ -61,72 +61,139 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- ── Profil kartı ──────────────────────────────────────────── -->
-            <androidx.cardview.widget.CardView
+            <!-- ── Profil başlığı (Nomad stili) ──────────────────────────── -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/surface"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="3dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp">
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
 
                     <ImageView
                         android:id="@+id/ivProfilePhoto"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
+                        android:layout_width="84dp"
+                        android:layout_height="84dp"
+                        android:background="@drawable/bg_avatar_circle"
                         android:src="@drawable/ic_person"
-                        android:background="@color/surface_variant"
                         android:scaleType="centerCrop"
                         android:contentDescription="Profil fotoğrafı"
                         app:tint="@color/text_secondary" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <ImageView
+                        android:id="@+id/btnEditProfile"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="bottom|end"
+                        android:background="@drawable/bg_edit_badge"
+                        android:src="@drawable/ic_edit"
+                        android:padding="6dp"
+                        android:contentDescription="Profili düzenle"
+                        app:tint="@color/white" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvProfileName"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:orientation="vertical">
+                        android:text="İsim ekleyin"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
 
-                        <TextView
-                            android:id="@+id/tvProfileName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="İsim ekleyin"
-                            android:textColor="@color/text_primary"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tvProfileLocation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="📍 Konum ekleyin"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
 
-                        <TextView
-                            android:id="@+id/tvProfileAge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Yaş eklenmedi"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnEditProfile"
-                            style="@style/Widget.Material3.Button.TextButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:minHeight="0dp"
-                            android:paddingStart="0dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:text="✏ Profili Düzenle"
-                            android:textSize="13sp" />
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/tvProfileAge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Yaş eklenmedi"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <!-- Şehir / Ülke pill'leri -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_stat_pill"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:id="@+id/tvProfileCities"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/primary"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ŞEHİR"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:letterSpacing="0.1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_stat_pill"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:id="@+id/tvProfileCountries"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/secondary_container"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ÜLKE"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:letterSpacing="0.1" />
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- Stat cards row 1 -->
             <LinearLayout

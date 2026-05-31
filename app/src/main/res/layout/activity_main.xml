@@ -68,7 +68,7 @@
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Başlık veya şehir ara..."
+                android:hint="Nereyi keşfetmek istersin?"
                 app:boxCornerRadiusTopStart="28dp"
                 app:boxCornerRadiusTopEnd="28dp"
                 app:boxCornerRadiusBottomStart="28dp"
@@ -83,6 +83,16 @@
                     android:inputType="text"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Kategoriler başlığı -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Kategoriler"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <!-- Category chips (scrollable) -->
             <HorizontalScrollView
@@ -261,6 +271,19 @@
                 android:textColor="@color/primary"
                 android:textSize="13sp" />
         </androidx.cardview.widget.CardView>
+
+        <!-- Bölüm başlığı -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp"
+            android:text="Gezi Anılarım"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <!-- List + empty state -->
         <FrameLayout

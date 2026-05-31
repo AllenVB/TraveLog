@@ -26,9 +26,10 @@ import java.util.concurrent.Executors;
 public class StatsActivity extends AppCompatActivity {
 
     private static final String PREFS = "travelog_profile";
-    private static final String KEY_NAME  = "profile_name";
-    private static final String KEY_AGE   = "profile_age";
-    private static final String KEY_PHOTO = "profile_photo";
+    private static final String KEY_NAME     = "profile_name";
+    private static final String KEY_AGE      = "profile_age";
+    private static final String KEY_PHOTO    = "profile_photo";
+    private static final String KEY_LOCATION = "profile_location";
 
     private ActivityStatsBinding binding;
 
@@ -92,11 +93,13 @@ public class StatsActivity extends AppCompatActivity {
 
     private void loadProfile() {
         SharedPreferences sp = getSharedPreferences(PREFS, MODE_PRIVATE);
-        String name  = sp.getString(KEY_NAME, "");
-        String age   = sp.getString(KEY_AGE, "");
-        String photo = sp.getString(KEY_PHOTO, "");
+        String name     = sp.getString(KEY_NAME, "");
+        String age      = sp.getString(KEY_AGE, "");
+        String photo    = sp.getString(KEY_PHOTO, "");
+        String location = sp.getString(KEY_LOCATION, "");
 
         binding.tvProfileName.setText(name.isEmpty() ? "İsim ekleyin" : name);
+        binding.tvProfileLocation.setText(location.isEmpty() ? "📍 Konum ekleyin" : "📍 " + location);
         binding.tvProfileAge.setText(age.isEmpty() ? "Yaş eklenmedi" : age + " yaşında");
 
         if (!photo.isEmpty()) {
@@ -133,6 +136,12 @@ public class StatsActivity extends AppCompatActivity {
         etName.setText(sp.getString(KEY_NAME, ""));
         container.addView(etName);
 
+        EditText etLocation = new EditText(this);
+        etLocation.setHint("Konum (ör. Barselona, İspanya)");
+        etLocation.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        etLocation.setText(sp.getString(KEY_LOCATION, ""));
+        container.addView(etLocation);
+
         EditText etAge = new EditText(this);
         etAge.setHint("Yaş");
         etAge.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -145,6 +154,7 @@ public class StatsActivity extends AppCompatActivity {
                 .setPositiveButton("Kaydet", (d, w) -> {
                     sp.edit()
                             .putString(KEY_NAME, etName.getText().toString().trim())
+                            .putString(KEY_LOCATION, etLocation.getText().toString().trim())
                             .putString(KEY_AGE, etAge.getText().toString().trim())
                             .apply();
                     loadProfile();
@@ -159,6 +169,7 @@ public class StatsActivity extends AppCompatActivity {
 
             int totalCount        = db.memoryDao().getTotalCount();
             int cityCount         = db.memoryDao().getUniqueCityCount();
+            int countryCount      = db.memoryDao().getUniqueCountryCount();
             int favCount          = db.memoryDao().getFavoriteCount();
             int planCount         = db.memoryDao().getFuturePlanCount();
             List<Place> allPlaces = db.placeDao().getAllPlaces();
@@ -171,6 +182,8 @@ public class StatsActivity extends AppCompatActivity {
             final int finalTotal   = allPlaces.size();
 
             runOnUiThread(() -> {
+                binding.tvProfileCities.setText(String.valueOf(cityCount));
+                binding.tvProfileCountries.setText(String.valueOf(countryCount));
                 binding.tvTotalMemories.setText(String.valueOf(totalCount));
                 binding.tvUniqueCities.setText(String.valueOf(cityCount));
                 binding.tvFavorites.setText(String.valueOf(favCount));
