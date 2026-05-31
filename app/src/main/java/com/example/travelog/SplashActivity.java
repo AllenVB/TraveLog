@@ -17,7 +17,12 @@ public class SplashActivity extends AppCompatActivity {
         setContentView(R.layout.activity_splash);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            startActivity(new Intent(SplashActivity.this, MainActivity.class));
+            boolean onboarded = getSharedPreferences(
+                    OnboardingActivity.PREFS, MODE_PRIVATE)
+                    .getBoolean(OnboardingActivity.KEY_ONBOARDED, false);
+
+            Class<?> target = onboarded ? MainActivity.class : OnboardingActivity.class;
+            startActivity(new Intent(SplashActivity.this, target));
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             finish();
         }, SPLASH_DURATION);

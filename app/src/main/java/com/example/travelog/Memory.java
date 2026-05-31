@@ -22,6 +22,10 @@ public class Memory implements Serializable {
     @ColumnInfo(defaultValue = "0")
     public boolean isFavorite;
 
+    /** true → gezi planı (henüz gidilmedi); false → gerçek anı */
+    @ColumnInfo(defaultValue = "0")
+    public boolean isFuturePlan;
+
     public Memory(String title, String description, String city,
                   String imageUri, String weather, String date) {
         this.title = title;
@@ -31,5 +35,6 @@ public class Memory implements Serializable {
         this.weather = weather;
         this.date = date;
         this.isFavorite = false;
+        this.isFuturePlan = false;
     }
 }

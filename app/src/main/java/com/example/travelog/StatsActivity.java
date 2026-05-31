@@ -36,15 +36,23 @@ public class StatsActivity extends AppCompatActivity {
             int totalCount   = db.memoryDao().getTotalCount();
             int cityCount    = db.memoryDao().getUniqueCityCount();
             int favCount     = db.memoryDao().getFavoriteCount();
+            int planCount    = db.memoryDao().getFuturePlanCount();
+            List<Place> allPlaces = db.placeDao().getAllPlaces();
+            int visitedPlaces = 0;
+            for (Place p : allPlaces) if (p.isVisited) visitedPlaces++;
             List<MemoryDao.CityCount> cityCounts = db.memoryDao().getCityCounts();
 
             String topCity = cityCounts.isEmpty() ? "-" : cityCounts.get(0).city;
+            final int finalVisited = visitedPlaces;
+            final int finalTotal = allPlaces.size();
 
             runOnUiThread(() -> {
                 binding.tvTotalMemories.setText(String.valueOf(totalCount));
                 binding.tvUniqueCities.setText(String.valueOf(cityCount));
                 binding.tvFavorites.setText(String.valueOf(favCount));
                 binding.tvTopCity.setText(topCity);
+                binding.tvVisitedPlaces.setText(finalVisited + "/" + finalTotal);
+                binding.tvFuturePlans.setText(String.valueOf(planCount));
 
                 buildCityChart(cityCounts, totalCount);
             });

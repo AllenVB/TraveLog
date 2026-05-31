@@ -9,6 +9,18 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_edit"
+        android:icon="@drawable/ic_edit"
+        android:title="Düzenle"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_pdf"
+        android:icon="@drawable/ic_pdf"
+        android:title="PDF Kaydet"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_share"
         android:icon="@drawable/ic_share"
         android:title="Paylaş"

@@ -73,7 +73,36 @@
                 android:layout_height="wrap_content"
                 android:text="⭐ Favoriler" />
 
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPlans"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📅 Planlar" />
+
         </com.google.android.material.chip.ChipGroup>
+
+        <!-- "Bu Gün Yıl Önce" banner (gizli, dinamik doldurulur) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardOnThisDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/weather_card"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="2dp">
+
+            <TextView
+                android:id="@+id/tvOnThisDay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:textColor="@color/primary_dark"
+                android:textSize="13sp" />
+        </androidx.cardview.widget.CardView>
 
         <!-- Liste + Boş Durum -->
         <FrameLayout

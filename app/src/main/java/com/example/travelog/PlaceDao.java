@@ -21,4 +21,7 @@ public interface PlaceDao {
 
     @Query("DELETE FROM places WHERE memoryId = :memoryId")
     void deleteByMemoryId(int memoryId);
+
+    @Query("SELECT * FROM places ORDER BY id ASC")
+    List<Place> getAllPlaces();
 }

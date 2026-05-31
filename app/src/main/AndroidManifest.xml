@@ -3,10 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:allowBackup="true"
@@ -19,7 +24,7 @@
         android:theme="@style/Theme.TraveLog"
         android:usesCleartextTraffic="true">
 
-        <!-- Splash Screen — Launcher olarak ayarlandı -->
+        <!-- Launcher: Splash → Onboarding (ilk çalıştırma) veya Main -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -30,9 +35,9 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
+        <activity android:name=".OnboardingActivity" android:exported="false" />
+
+        <activity android:name=".MainActivity" android:exported="false" />
 
         <activity
             android:name=".AddMemoryActivity"
@@ -46,15 +51,37 @@
             android:label="Anı Detayı"
             android:parentActivityName=".MainActivity" />
 
-        <activity
-            android:name=".MapActivity"
-            android:exported="false"
-            android:label="Harita" />
+        <activity android:name=".MapActivity" android:exported="false" android:label="Harita" />
 
-        <activity
-            android:name=".StatsActivity"
-            android:exported="false"
-            android:label="İstatistikler" />
+        <activity android:name=".StatsActivity" android:exported="false" android:label="İstatistikler" />
+
+        <!-- "Bu Gün Yıl Önce" bildirim alıcısı -->
+        <receiver
+            android:name=".OnThisDayReceiver"
+            android:exported="false" />
+
+        <!-- Cihaz yeniden başlatıldığında alarmı yeniden ayarla -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Ana Ekran Widget'ı -->
+        <receiver
+            android:name=".TraveLogWidget"
+            android:exported="true"
+            android:label="TraveLog Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
 
         <!-- Google Maps API Key -->
         <meta-data

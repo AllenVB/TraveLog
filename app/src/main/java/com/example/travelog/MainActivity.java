@@ -1,9 +1,12 @@
 package com.example.travelog;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -14,6 +17,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,19 +25,24 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.travelog.databinding.ActivityMainBinding;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Sıralama modları
-    private static final int SORT_NEWEST   = 0;
-    private static final int SORT_OLDEST   = 1;
-    private static final int SORT_CITY_AZ  = 2;
+    private static final int SORT_NEWEST    = 0;
+    private static final int SORT_OLDEST    = 1;
+    private static final int SORT_CITY_AZ   = 2;
     private static final int SORT_FAV_FIRST = 3;
+
+    private static final int MODE_ALL   = 0;
+    private static final int MODE_FAV   = 1;
+    private static final int MODE_PLANS = 2;
 
     private ActivityMainBinding binding;
     private MemoryAdapter adapter;
@@ -41,14 +50,13 @@ public class MainActivity extends AppCompatActivity {
     private AppDatabase db;
 
     private int currentSortMode = SORT_NEWEST;
-    private boolean showFavoritesOnly = false;
+    private int filterMode = MODE_ALL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         setSupportActionBar(binding.toolbar);
 
         db = AppDatabase.getInstance(this);
@@ -65,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         setupSearch();
         setupFilterChips();
         setupSwipeToDelete();
+        setupNotifications();
 
         binding.fabAdd.setOnClickListener(v ->
                 startActivity(new Intent(this, AddMemoryActivity.class)));
@@ -72,8 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ── Toolbar Menüsü ────────────────────────────────────────────────────────
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    @Override public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
@@ -81,17 +89,24 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_sort) {
-            showSortDialog();
-            return true;
-        } else if (id == R.id.action_map) {
-            startActivity(new Intent(this, MapActivity.class));
-            return true;
-        } else if (id == R.id.action_stats) {
-            startActivity(new Intent(this, StatsActivity.class));
-            return true;
-        }
+        if (id == R.id.action_sort)  { showSortDialog(); return true; }
+        if (id == R.id.action_map)   { startActivity(new Intent(this, MapActivity.class)); return true; }
+        if (id == R.id.action_stats) { startActivity(new Intent(this, StatsActivity.class)); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    // ── Bildirim kurulumu ─────────────────────────────────────────────────────
+
+    private void setupNotifications() {
+        NotificationHelper.createChannel(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 200);
+            }
+        }
+        NotificationHelper.scheduleDailyAlarm(this);
     }
 
     // ── Sıralama Diyaloğu ─────────────────────────────────────────────────────
@@ -114,9 +129,7 @@ public class MainActivity extends AppCompatActivity {
         binding.editTextSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int i, int i1, int i2) {}
             @Override public void afterTextChanged(Editable s) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 adapter.filter(s.toString());
                 updateEmptyState();
             }
@@ -127,7 +140,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupFilterChips() {
         binding.chipGroupFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            showFavoritesOnly = checkedIds.contains(R.id.chipFavorites);
+            if (checkedIds.contains(R.id.chipFavorites))  filterMode = MODE_FAV;
+            else if (checkedIds.contains(R.id.chipPlans)) filterMode = MODE_PLANS;
+            else                                          filterMode = MODE_ALL;
             loadMemories();
         });
     }
@@ -159,19 +174,17 @@ public class MainActivity extends AppCompatActivity {
                                     float dX, float dY, int state, boolean active) {
                 View item = vh.itemView;
                 if (dX < 0) {
-                    redBg.setBounds(item.getRight() + (int) dX,
-                            item.getTop(), item.getRight(), item.getBottom());
+                    redBg.setBounds(item.getRight() + (int) dX, item.getTop(),
+                            item.getRight(), item.getBottom());
                     redBg.draw(c);
-
                     if (deleteIcon == null)
                         deleteIcon = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_delete);
-
                     if (deleteIcon != null) {
                         int margin = (item.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
-                        int top    = item.getTop() + margin;
+                        int top = item.getTop() + margin;
                         int bottom = top + deleteIcon.getIntrinsicHeight();
-                        int right  = item.getRight() - margin;
-                        int left   = right - deleteIcon.getIntrinsicWidth();
+                        int right = item.getRight() - margin;
+                        int left  = right - deleteIcon.getIntrinsicWidth();
                         if (item.getRight() + (int) dX < left) {
                             deleteIcon.setBounds(left, top, right, bottom);
                             deleteIcon.draw(c);
@@ -190,7 +203,8 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("\"" + memory.title + "\" kalıcı olarak silinsin mi?")
                 .setPositiveButton("Sil", (d, w) -> {
                     Executors.newSingleThreadExecutor().execute(() -> {
-                        db.placeDao().deleteByMemoryId(memory.id); // ilişkili yerleri sil
+                        db.placeDao().deleteByMemoryId(memory.id);
+                        db.photoDao().deleteByMemoryId(memory.id);
                         db.memoryDao().delete(memory);
                         runOnUiThread(this::loadMemories);
                     });
@@ -210,40 +224,64 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadMemories() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            List<Memory> memories = showFavoritesOnly
-                    ? db.memoryDao().getFavoriteMemories()
-                    : db.memoryDao().getAllMemories();
+            List<Memory> memories;
+            if (filterMode == MODE_FAV)        memories = db.memoryDao().getFavoriteMemories();
+            else if (filterMode == MODE_PLANS) memories = db.memoryDao().getFuturePlans();
+            else                               memories = db.memoryDao().getAllMemories();
 
+            // "Bu Gün Yıl Önce" banner — sadece tüm anılar modunda
+            Memory onThisDay = null;
+            if (filterMode == MODE_ALL) {
+                String todayDM = new SimpleDateFormat("dd.MM", Locale.getDefault()).format(new Date());
+                for (Memory m : memories) {
+                    if (m.date != null && m.date.startsWith(todayDM)) { onThisDay = m; break; }
+                }
+            }
+
+            final List<Memory> result = memories;
+            final Memory banner = onThisDay;
             runOnUiThread(() -> {
-                allMemories = memories;
+                allMemories = result;
                 applyDisplayList();
+                showOnThisDayBanner(banner);
             });
         });
     }
 
-    /** Sıralama uygulayıp adapter'ı güncelle */
+    private void showOnThisDayBanner(Memory memory) {
+        if (memory == null) { binding.cardOnThisDay.setVisibility(View.GONE); return; }
+        try {
+            String[] parts = memory.date.split("\\.");
+            int diffYears = 0;
+            if (parts.length == 3) {
+                int year = Integer.parseInt(parts[2]);
+                diffYears = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) - year;
+            }
+            binding.tvOnThisDay.setText(
+                    "📅  " + diffYears + " yıl önce bugün " + memory.city
+                    + "'deydin — “" + memory.title + "”");
+            binding.cardOnThisDay.setVisibility(View.VISIBLE);
+            binding.cardOnThisDay.setOnClickListener(v -> {
+                Intent i = new Intent(this, DetailActivity.class);
+                i.putExtra("memory", memory);
+                startActivity(i);
+            });
+        } catch (Exception ignored) {
+            binding.cardOnThisDay.setVisibility(View.GONE);
+        }
+    }
+
     private void applyDisplayList() {
         List<Memory> sorted = new ArrayList<>(allMemories);
-
         switch (currentSortMode) {
-            case SORT_OLDEST:
-                Collections.reverse(sorted);
-                break;
-            case SORT_CITY_AZ:
-                Collections.sort(sorted, (a, b) -> a.city.compareToIgnoreCase(b.city));
-                break;
-            case SORT_FAV_FIRST:
-                Collections.sort(sorted, (a, b) -> Boolean.compare(b.isFavorite, a.isFavorite));
-                break;
-            default: // SORT_NEWEST — DB zaten DESC sıralı
-                break;
+            case SORT_OLDEST:    Collections.reverse(sorted); break;
+            case SORT_CITY_AZ:   Collections.sort(sorted, (a, b) -> a.city.compareToIgnoreCase(b.city)); break;
+            case SORT_FAV_FIRST: Collections.sort(sorted, (a, b) -> Boolean.compare(b.isFavorite, a.isFavorite)); break;
+            default: break;
         }
-
         adapter.updateList(sorted);
-
-        String currentSearch = binding.editTextSearch.getText().toString();
-        if (!currentSearch.isEmpty()) adapter.filter(currentSearch);
-
+        String q = binding.editTextSearch.getText().toString();
+        if (!q.isEmpty()) adapter.filter(q);
         updateEmptyState();
     }
 
