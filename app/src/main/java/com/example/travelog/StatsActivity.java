@@ -1,5 +1,6 @@
 package com.example.travelog;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -23,20 +24,42 @@ public class StatsActivity extends AppCompatActivity {
         binding = ActivityStatsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        setSupportActionBar(binding.toolbar);
-        binding.toolbar.setNavigationOnClickListener(v -> finish());
+        // Back button (floating header)
+        binding.btnBack.setOnClickListener(v -> finish());
+
+        // Bottom navigation
+        binding.bottomNav.setSelectedItemId(R.id.nav_profile);
+        binding.bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                finish();
+                return true;
+            }
+            if (id == R.id.nav_map) {
+                startActivity(new Intent(this, MapActivity.class));
+                return true;
+            }
+            return true; // nav_profile — already here
+        });
 
         loadStats();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Keep profile selected when returning to this screen
+        binding.bottomNav.setSelectedItemId(R.id.nav_profile);
     }
 
     private void loadStats() {
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
 
-            int totalCount   = db.memoryDao().getTotalCount();
-            int cityCount    = db.memoryDao().getUniqueCityCount();
-            int favCount     = db.memoryDao().getFavoriteCount();
-            int planCount    = db.memoryDao().getFuturePlanCount();
+            int totalCount        = db.memoryDao().getTotalCount();
+            int cityCount         = db.memoryDao().getUniqueCityCount();
+            int favCount          = db.memoryDao().getFavoriteCount();
+            int planCount         = db.memoryDao().getFuturePlanCount();
             List<Place> allPlaces = db.placeDao().getAllPlaces();
             int visitedPlaces = 0;
             for (Place p : allPlaces) if (p.isVisited) visitedPlaces++;
@@ -44,7 +67,7 @@ public class StatsActivity extends AppCompatActivity {
 
             String topCity = cityCounts.isEmpty() ? "-" : cityCounts.get(0).city;
             final int finalVisited = visitedPlaces;
-            final int finalTotal = allPlaces.size();
+            final int finalTotal   = allPlaces.size();
 
             runOnUiThread(() -> {
                 binding.tvTotalMemories.setText(String.valueOf(totalCount));
@@ -59,7 +82,7 @@ public class StatsActivity extends AppCompatActivity {
         });
     }
 
-    /** Şehir bazlı bar chart oluştur */
+    /** Build city bar chart dynamically */
     private void buildCityChart(List<MemoryDao.CityCount> cityCounts, int total) {
         binding.layoutCityStats.removeAllViews();
 
@@ -72,7 +95,6 @@ public class StatsActivity extends AppCompatActivity {
         }
 
         for (MemoryDao.CityCount cc : cityCounts) {
-            // Satır container
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.VERTICAL);
             LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
@@ -81,7 +103,6 @@ public class StatsActivity extends AppCompatActivity {
             rowParams.setMargins(0, 0, 0, 12);
             row.setLayoutParams(rowParams);
 
-            // Şehir adı + sayı
             LinearLayout header = new LinearLayout(this);
             header.setOrientation(LinearLayout.HORIZONTAL);
 
@@ -101,10 +122,9 @@ public class StatsActivity extends AppCompatActivity {
             header.addView(tvCity);
             header.addView(tvCount);
 
-            // Progress bar
             ProgressBar progressBar = new ProgressBar(this, null,
                     android.R.attr.progressBarStyleHorizontal);
-            progressBar.setMax(total);
+            progressBar.setMax(Math.max(total, 1));
             progressBar.setProgress(cc.cnt);
             progressBar.setProgressTintList(
                     android.content.res.ColorStateList.valueOf(getColor(R.color.primary)));

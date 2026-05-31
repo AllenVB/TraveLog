@@ -5,9 +5,12 @@
         <item name="colorOnPrimary">@color/on_primary</item>
         <item name="colorSecondary">@color/secondary</item>
         <item name="colorOnSecondary">@color/on_primary</item>
+        <item name="colorSecondaryContainer">@color/secondary_container</item>
         <item name="android:colorBackground">@color/background</item>
         <item name="colorSurface">@color/surface</item>
-        <item name="android:statusBarColor" tools:targetApi="21">@color/primary_dark</item>
+        <!-- Light status bar with background color — matches floating header -->
+        <item name="android:statusBarColor" tools:targetApi="21">@color/background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
     </style>
 
     <style name="Theme.TraveLog" parent="Base.Theme.TraveLog" />

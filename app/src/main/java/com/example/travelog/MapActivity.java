@@ -40,8 +40,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         binding = ActivityMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        setSupportActionBar(binding.toolbar);
-        binding.toolbar.setNavigationOnClickListener(v -> finish());
+        // Floating back button
+        binding.btnBack.setOnClickListener(v -> finish());
+
+        // Bottom navigation
+        binding.bottomNav.setSelectedItemId(R.id.nav_map);
+        binding.bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                finish();
+                return true;
+            }
+            if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, StatsActivity.class));
+                return true;
+            }
+            return true; // nav_map — already here
+        });
 
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getSupportFragmentManager().findFragmentById(R.id.mapFragment);
@@ -56,7 +71,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.getUiSettings().setMapToolbarEnabled(true);
 
-        // Marker tıklanınca anı detayını aç
+        // Offset map UI (zoom controls) above the bottom navigation bar
+        int bottomPad = (int) (64 * getResources().getDisplayMetrics().density);
+        googleMap.setPadding(0, 0, 0, bottomPad);
+
+        // Open memory detail on info window tap
         googleMap.setOnInfoWindowClickListener(marker -> {
             Memory memory = markerMemoryMap.get(marker);
             if (memory != null) {
@@ -71,9 +90,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private void loadMarkersAsync() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            // Tarihe göre sıralı — rota çizimi için önemli
+            // Sorted by date — important for route drawing
             List<Memory> memories = AppDatabase.getInstance(this).memoryDao().getAllMemories();
-            // DB DESC sırası → ters çevir → ASC (eskiden yeniye) rota için
+            // DB returns DESC order → reverse to ASC (old→new) for route
             java.util.Collections.reverse(memories);
 
             Geocoder geocoder = new Geocoder(this, Locale.getDefault());
@@ -93,9 +112,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         boundsBuilder.include(position);
                         hasMarker = true;
 
-                        final boolean isFav     = memory.isFavorite;
-                        final boolean isPlan    = memory.isFuturePlan;
-                        final LatLng finalPos   = position;
+                        final boolean isFav      = memory.isFavorite;
+                        final boolean isPlan     = memory.isFuturePlan;
+                        final LatLng finalPos    = position;
                         final Memory finalMemory = memory;
 
                         runOnUiThread(() -> {
@@ -113,7 +132,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         });
                     }
                 } catch (IOException e) {
-                    // Geocoding başarısız — atla
+                    // Geocoding failed — skip
                 }
             }
 
@@ -126,12 +145,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                // Rota polyline'ı çiz
+                // Draw route polyline
                 if (route.size() > 1) {
                     googleMap.addPolyline(new PolylineOptions()
                             .addAll(route)
-                            .color(0x801565C0) // yarı saydam mavi
-                            .width(5f));
+                            .color(0x800050CB) // semi-transparent blue (Nomad primary)
+                            .width(6f));
                 }
                 LatLngBounds bounds = boundsBuilder.build();
                 try {

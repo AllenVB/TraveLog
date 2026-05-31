@@ -6,24 +6,53 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
+    <!-- ── Header ──────────────────────────────────────────────────────── -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@color/primary"
+        app:elevation="4dp">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary"
-            app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="@color/on_primary"
-            app:title="📊 İstatistikler"
-            app:titleTextColor="@color/on_primary" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_arrow_back"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:contentDescription="Geri"
+                app:tint="@color/on_primary" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="📊 İstatistikler"
+                android:textColor="@color/on_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- ── Scrollable content ───────────────────────────────────────────── -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="64dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -32,7 +61,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Stat Kartları Satır 1 -->
+            <!-- Stat cards row 1 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -40,11 +69,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="110dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     app:cardBackgroundColor="@color/primary"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp">
 
                     <LinearLayout
@@ -73,11 +102,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="110dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    app:cardBackgroundColor="@color/secondary"
-                    app:cardCornerRadius="16dp"
+                    app:cardBackgroundColor="@color/primary_light"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp">
 
                     <LinearLayout
@@ -106,7 +135,7 @@
 
             </LinearLayout>
 
-            <!-- Stat Kartları Satır 2 -->
+            <!-- Stat cards row 2 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -115,11 +144,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="110dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     app:cardBackgroundColor="#F44336"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp">
 
                     <LinearLayout
@@ -148,11 +177,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="110dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    app:cardBackgroundColor="@color/accent"
-                    app:cardCornerRadius="16dp"
+                    app:cardBackgroundColor="@color/secondary_container"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp">
 
                     <LinearLayout
@@ -185,7 +214,7 @@
 
             </LinearLayout>
 
-            <!-- Stat Kartları Satır 3 -->
+            <!-- Stat cards row 3 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -194,11 +223,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="110dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     app:cardBackgroundColor="#4CAF50"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp">
 
                     <LinearLayout
@@ -227,11 +256,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="100dp"
+                    android:layout_height="110dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     app:cardBackgroundColor="#FF8F00"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp">
 
                     <LinearLayout
@@ -260,7 +289,7 @@
 
             </LinearLayout>
 
-            <!-- Şehir Listesi -->
+            <!-- City distribution -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -275,7 +304,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="@color/surface"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="3dp">
 
                 <LinearLayout
@@ -289,4 +318,17 @@
 
         </LinearLayout>
     </ScrollView>
+
+    <!-- ── Bottom Navigation ────────────────────────────────────────────── -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/surface"
+        app:elevation="8dp"
+        app:menu="@menu/bottom_nav_menu"
+        app:selectedItemColor="@color/primary"
+        app:unselectedItemColor="@color/text_secondary" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

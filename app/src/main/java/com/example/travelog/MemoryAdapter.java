@@ -47,23 +47,29 @@ public class MemoryAdapter extends RecyclerView.Adapter<MemoryAdapter.MemoryView
         Memory memory = filteredList.get(position);
 
         holder.textViewTitle.setText(memory.title);
-        holder.textViewCity.setText("📍 " + memory.city);
+        holder.textViewCity.setText(memory.city != null ? memory.city.toUpperCase() : "");
         holder.textViewDate.setText("📅 " + memory.date);
         holder.textViewWeather.setText(
                 TextUtils.isEmpty(memory.weather) ? "" : "🌤 " + memory.weather);
 
-        // Favori ikonu
+        // Favorite heart — top-right
         holder.ivFavorite.setVisibility(memory.isFavorite ? View.VISIBLE : View.GONE);
 
+        // Plan badge — top-left
+        holder.tvPlanBadge.setVisibility(memory.isFuturePlan ? View.VISIBLE : View.GONE);
+
+        // Cover photo
         if (!TextUtils.isEmpty(memory.imageUri)) {
             Glide.with(holder.itemView.getContext())
                     .load(Uri.parse(memory.imageUri))
                     .centerCrop()
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .placeholder(android.R.color.darker_gray)
+                    .placeholder(R.color.image_placeholder)
                     .into(holder.imageView);
         } else {
-            holder.imageView.setImageResource(android.R.color.darker_gray);
+            Glide.with(holder.itemView.getContext())
+                    .load(R.color.image_placeholder)
+                    .into(holder.imageView);
         }
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(memory));
@@ -78,7 +84,7 @@ public class MemoryAdapter extends RecyclerView.Adapter<MemoryAdapter.MemoryView
         return filteredList.get(position);
     }
 
-    /** DiffUtil ile animasyonlu güncelleme */
+    /** Animated update via DiffUtil */
     public void updateList(List<Memory> newList) {
         MemoryDiffCallback callback = new MemoryDiffCallback(filteredList, newList);
         DiffUtil.DiffResult result = DiffUtil.calculateDiff(callback);
@@ -87,7 +93,7 @@ public class MemoryAdapter extends RecyclerView.Adapter<MemoryAdapter.MemoryView
         result.dispatchUpdatesTo(this);
     }
 
-    /** Başlık veya şehre göre anlık filtreleme */
+    /** Instant filter by title or city */
     public void filter(String query) {
         List<Memory> newFiltered = new ArrayList<>();
         if (TextUtils.isEmpty(query.trim())) {
@@ -107,15 +113,16 @@ public class MemoryAdapter extends RecyclerView.Adapter<MemoryAdapter.MemoryView
 
     static class MemoryViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView, ivFavorite;
-        TextView textViewTitle, textViewCity, textViewDate, textViewWeather;
+        TextView textViewTitle, textViewCity, textViewDate, textViewWeather, tvPlanBadge;
 
         MemoryViewHolder(@NonNull View itemView) {
             super(itemView);
-            imageView = itemView.findViewById(R.id.imageViewItem);
-            ivFavorite = itemView.findViewById(R.id.ivFavoriteIndicator);
-            textViewTitle = itemView.findViewById(R.id.textViewTitleItem);
-            textViewCity = itemView.findViewById(R.id.textViewCityItem);
-            textViewDate = itemView.findViewById(R.id.textViewDateItem);
+            imageView       = itemView.findViewById(R.id.imageViewItem);
+            ivFavorite      = itemView.findViewById(R.id.ivFavoriteIndicator);
+            tvPlanBadge     = itemView.findViewById(R.id.tvPlanBadgeCard);
+            textViewTitle   = itemView.findViewById(R.id.textViewTitleItem);
+            textViewCity    = itemView.findViewById(R.id.textViewCityItem);
+            textViewDate    = itemView.findViewById(R.id.textViewDateItem);
             textViewWeather = itemView.findViewById(R.id.textViewWeatherItem);
         }
     }

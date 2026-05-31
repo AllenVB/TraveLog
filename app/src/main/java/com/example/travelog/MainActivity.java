@@ -10,8 +10,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -57,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        setSupportActionBar(binding.toolbar);
+        // No action bar — using custom floating header
 
         db = AppDatabase.getInstance(this);
 
@@ -74,28 +72,37 @@ public class MainActivity extends AppCompatActivity {
         setupFilterChips();
         setupSwipeToDelete();
         setupNotifications();
+        setupBottomNav();
+
+        // Sort button (replaces menu item)
+        binding.btnSort.setOnClickListener(v -> showSortDialog());
 
         binding.fabAdd.setOnClickListener(v ->
                 startActivity(new Intent(this, AddMemoryActivity.class)));
     }
 
-    // ── Toolbar Menüsü ────────────────────────────────────────────────────────
+    // ── Bottom Navigation ──────────────────────────────────────────────────
 
-    @Override public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    private void setupBottomNav() {
+        // Mark Home as selected
+        binding.bottomNav.setSelectedItemId(R.id.nav_home);
+
+        binding.bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_map) {
+                startActivity(new Intent(this, MapActivity.class));
+                return true;
+            }
+            if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, StatsActivity.class));
+                return true;
+            }
+            // nav_home: already here
+            return true;
+        });
     }
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_sort)  { showSortDialog(); return true; }
-        if (id == R.id.action_map)   { startActivity(new Intent(this, MapActivity.class)); return true; }
-        if (id == R.id.action_stats) { startActivity(new Intent(this, StatsActivity.class)); return true; }
-        return super.onOptionsItemSelected(item);
-    }
-
-    // ── Bildirim kurulumu ─────────────────────────────────────────────────────
+    // ── Notification setup ─────────────────────────────────────────────────
 
     private void setupNotifications() {
         NotificationHelper.createChannel(this);
@@ -109,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         NotificationHelper.scheduleDailyAlarm(this);
     }
 
-    // ── Sıralama Diyaloğu ─────────────────────────────────────────────────────
+    // ── Sort Dialog ────────────────────────────────────────────────────────
 
     private void showSortDialog() {
         String[] options = {"En Yeni", "En Eski", "Şehir A-Z", "Favoriler Önce"};
@@ -123,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ── Arama ─────────────────────────────────────────────────────────────────
+    // ── Search ─────────────────────────────────────────────────────────────
 
     private void setupSearch() {
         binding.editTextSearch.addTextChangedListener(new TextWatcher() {
@@ -136,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // ── Filtre Çipleri ────────────────────────────────────────────────────────
+    // ── Filter Chips ───────────────────────────────────────────────────────
 
     private void setupFilterChips() {
         binding.chipGroupFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
@@ -147,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // ── Sola Kaydırarak Silme ─────────────────────────────────────────────────
+    // ── Swipe to delete ────────────────────────────────────────────────────
 
     private void setupSwipeToDelete() {
         ItemTouchHelper.SimpleCallback cb = new ItemTouchHelper.SimpleCallback(
@@ -181,10 +188,10 @@ public class MainActivity extends AppCompatActivity {
                         deleteIcon = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_delete);
                     if (deleteIcon != null) {
                         int margin = (item.getHeight() - deleteIcon.getIntrinsicHeight()) / 2;
-                        int top = item.getTop() + margin;
+                        int top    = item.getTop() + margin;
                         int bottom = top + deleteIcon.getIntrinsicHeight();
-                        int right = item.getRight() - margin;
-                        int left  = right - deleteIcon.getIntrinsicWidth();
+                        int right  = item.getRight() - margin;
+                        int left   = right - deleteIcon.getIntrinsicWidth();
                         if (item.getRight() + (int) dX < left) {
                             deleteIcon.setBounds(left, top, right, bottom);
                             deleteIcon.draw(c);
@@ -214,11 +221,13 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ── Veri ─────────────────────────────────────────────────────────────────
+    // ── Data ───────────────────────────────────────────────────────────────
 
     @Override
     protected void onResume() {
         super.onResume();
+        // Re-select home tab when returning from other activities
+        binding.bottomNav.setSelectedItemId(R.id.nav_home);
         loadMemories();
     }
 
@@ -229,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
             else if (filterMode == MODE_PLANS) memories = db.memoryDao().getFuturePlans();
             else                               memories = db.memoryDao().getAllMemories();
 
-            // "Bu Gün Yıl Önce" banner — sadece tüm anılar modunda
+            // "Bu Gün Yıl Önce" banner — only in ALL mode
             Memory onThisDay = null;
             if (filterMode == MODE_ALL) {
                 String todayDM = new SimpleDateFormat("dd.MM", Locale.getDefault()).format(new Date());
@@ -258,8 +267,8 @@ public class MainActivity extends AppCompatActivity {
                 diffYears = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) - year;
             }
             binding.tvOnThisDay.setText(
-                    "📅  " + diffYears + " yıl önce bugün " + memory.city
-                    + "'deydin — “" + memory.title + "”");
+                    "📅  " + diffYears + " yil once bugun " + memory.city
+                    + "'deydin — \"" + memory.title + "\"");
             binding.cardOnThisDay.setVisibility(View.VISIBLE);
             binding.cardOnThisDay.setOnClickListener(v -> {
                 Intent i = new Intent(this, DetailActivity.class);
