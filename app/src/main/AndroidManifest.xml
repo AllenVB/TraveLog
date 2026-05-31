@@ -55,6 +55,8 @@
 
         <activity android:name=".StatsActivity" android:exported="false" android:label="İstatistikler" />
 
+        <activity android:name=".CalendarActivity" android:exported="false" android:label="Takvim" />
+
         <!-- "Bu Gün Yıl Önce" bildirim alıcısı -->
         <receiver
             android:name=".OnThisDayReceiver"

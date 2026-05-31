@@ -105,6 +105,7 @@ public class AddMemoryActivity extends AppCompatActivity {
         binding.editTextTitle.setText(m.title);
         binding.editTextDescription.setText(m.description);
         binding.editTextCity.setText(m.city);
+        binding.editTextCountry.setText(m.country);
         selectedImageUri = m.imageUri != null ? m.imageUri : "";
         weatherInfo = m.weather != null ? m.weather : "";
         if (!weatherInfo.isEmpty())
@@ -311,6 +312,7 @@ public class AddMemoryActivity extends AppCompatActivity {
         String title       = binding.editTextTitle.getText().toString().trim();
         String description = binding.editTextDescription.getText().toString().trim();
         String city        = binding.editTextCity.getText().toString().trim();
+        String country     = binding.editTextCountry.getText().toString().trim();
         String date;
 
         if (isFuturePlan && !TextUtils.isEmpty(selectedDate)) date = selectedDate;
@@ -334,6 +336,7 @@ public class AddMemoryActivity extends AppCompatActivity {
                 editMemory.title       = title;
                 editMemory.description = description;
                 editMemory.city        = city;
+                editMemory.country     = country;
                 editMemory.imageUri    = selectedImageUri;
                 editMemory.weather     = weatherInfo;
                 editMemory.date        = date;
@@ -349,6 +352,7 @@ public class AddMemoryActivity extends AppCompatActivity {
             } else {
                 // Yeni anı
                 Memory memory = new Memory(title, description, city, selectedImageUri, weatherInfo, date);
+                memory.country = country;
                 memory.isFuturePlan = isFuturePlan;
                 long memoryId = db.memoryDao().insert(memory);
                 if (!fetchedPlaces.isEmpty()) {

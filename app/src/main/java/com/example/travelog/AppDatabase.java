@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {Memory.class, Place.class, MemoryPhoto.class}, version = 4, exportSchema = false)
+@Database(entities = {Memory.class, Place.class, MemoryPhoto.class}, version = 5, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static AppDatabase instance;
@@ -59,13 +59,23 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    // ── Versiyon 4 → 5 : country (ülke) alanı ───────────────────────────────
+    static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL(
+                "ALTER TABLE memories ADD COLUMN country TEXT"
+            );
+        }
+    };
+
     public static synchronized AppDatabase getInstance(Context context) {
         if (instance == null) {
             instance = Room.databaseBuilder(
                             context.getApplicationContext(),
                             AppDatabase.class,
                             "travel_log_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .build();
         }

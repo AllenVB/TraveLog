@@ -30,6 +30,13 @@ public interface MemoryDao {
     @Query("SELECT COUNT(DISTINCT city) FROM memories WHERE isFuturePlan = 0")
     int getUniqueCityCount();
 
+    @Query("SELECT COUNT(DISTINCT country) FROM memories WHERE isFuturePlan = 0 AND country IS NOT NULL AND country != ''")
+    int getUniqueCountryCount();
+
+    /** Anılar + planlar — takvim için hepsi (tarihli) */
+    @Query("SELECT * FROM memories WHERE date IS NOT NULL AND date != '' ORDER BY date ASC")
+    List<Memory> getAllWithDate();
+
     @Query("SELECT COUNT(*) FROM memories WHERE isFavorite = 1 AND isFuturePlan = 0")
     int getFavoriteCount();
 

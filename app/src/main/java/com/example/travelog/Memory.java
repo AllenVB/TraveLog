@@ -15,6 +15,7 @@ public class Memory implements Serializable {
     public String title;
     public String description;
     public String city;
+    public String country;
     public String imageUri;
     public String weather;
     public String date;

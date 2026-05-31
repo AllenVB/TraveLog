@@ -77,6 +77,10 @@ public class MainActivity extends AppCompatActivity {
         // Sort button (replaces menu item)
         binding.btnSort.setOnClickListener(v -> showSortDialog());
 
+        // Calendar button
+        binding.btnCalendar.setOnClickListener(v ->
+                startActivity(new Intent(this, CalendarActivity.class)));
+
         binding.fabAdd.setOnClickListener(v ->
                 startActivity(new Intent(this, AddMemoryActivity.class)));
     }
@@ -247,12 +251,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            final int cityCount    = db.memoryDao().getUniqueCityCount();
+            final int countryCount = db.memoryDao().getUniqueCountryCount();
+
             final List<Memory> result = memories;
             final Memory banner = onThisDay;
             runOnUiThread(() -> {
                 allMemories = result;
                 applyDisplayList();
                 showOnThisDayBanner(banner);
+                binding.tvCityCount.setText(String.valueOf(cityCount));
+                binding.tvCountryCount.setText(String.valueOf(countryCount));
             });
         });
     }
