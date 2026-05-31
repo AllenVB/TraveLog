@@ -16,6 +16,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../travelog-release.jks")
+            storePassword = "travelog2024"
+            keyAlias = "travelog"
+            keyPassword = "travelog2024"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -23,6 +32,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
