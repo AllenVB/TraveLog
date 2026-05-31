@@ -27,9 +27,12 @@ public interface MemoryDao {
     @Query("SELECT COUNT(*) FROM memories WHERE isFuturePlan = 0")
     int getTotalCount();
 
-    @Query("SELECT COUNT(DISTINCT city) FROM memories WHERE isFuturePlan = 0")
+    // Farklı şehir sayısı: aynı isimli şehir farklı ülkedeyse ayrı sayılır
+    @Query("SELECT COUNT(*) FROM (SELECT DISTINCT city, country FROM memories " +
+            "WHERE isFuturePlan = 0 AND city IS NOT NULL AND city != '')")
     int getUniqueCityCount();
 
+    // Farklı ülke sayısı
     @Query("SELECT COUNT(DISTINCT country) FROM memories WHERE isFuturePlan = 0 AND country IS NOT NULL AND country != ''")
     int getUniqueCountryCount();
 
